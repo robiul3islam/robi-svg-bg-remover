@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bulk SVG Background Remover</title>
+<script>
+var android=/Android/i.test(navigator.userAgent);
+var standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+location.replace((android&&!standalone)?'android.html':'app.html');
+</script>
+<noscript><meta http-equiv="refresh" content="0;url=app.html"></noscript>
+</head><body><a href="app.html">Open</a></body></html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="bn"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bulk SVG Background Remover - Android App</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#111111">
+<link rel="icon" href="icon-192.png">
+<style>
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#111;color:#f2f2f2;font:16px/1.5 system-ui,sans-serif;padding:20px;box-sizing:border-box;text-align:center}
+.c{max-width:380px;width:100%}
+h1{font-size:22px;margin:14px 0 4px}p{color:#9a9aa2;margin:4px 0 22px}
+a,button{display:block;width:100%;box-sizing:border-box;padding:15px;margin:10px 0;border-radius:12px;font:600 16px system-ui;text-decoration:none;cursor:pointer;border:1px solid #444}
+.p{background:#f2f2f2;color:#111;border-color:#f2f2f2}.s{background:transparent;color:#f2f2f2}
+small{display:block;color:#9a9aa2;margin-top:14px}
+</style></head><body><div class="c">
+<img src="logo.png" alt="Robi Graphics" style="width:100%;max-width:300px;height:auto;border-radius:16px;background:#fff">
+<h1>Bulk SVG Background Remover</h1>
+<p>Android অ্যাপ হিসেবে ইনস্টল করুন</p>
+<button class="p" id="inst">📲 অ্যাপ ইনস্টল করুন</button>
+<a class="s" id="apk" href="#">⬇️ APK ডাউনলোড</a>
+<a class="s" href="app.html">🌐 ওয়েব ভার্সন খুলুন</a>
+<small id="hint"></small>
+</div>
+<script>
+var dp;
+var h=location.hostname.split('.')[0],r=location.pathname.split('/')[1];
+document.getElementById('apk').href='https://github.com/'+h+'/'+r+'/releases/download/latest/RobiGraphics.apk';
+addEventListener('beforeinstallprompt',function(e){e.preventDefault();dp=e});
+document.getElementById('inst').onclick=function(){
+  if(dp){dp.prompt();dp.userChoice.then(function(){dp=null})}
+  else document.getElementById('hint').textContent='Chrome মেনু (⋮) → "Install app" বা "Add to Home screen" চাপুন।';
+};
+addEventListener('appinstalled',function(){location.href='app.html'});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+</script></body></html>

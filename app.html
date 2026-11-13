@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bulk SVG Background Remover</title>
+<style>
+:root{--bg:#fff;--s:#f4f4f5;--t:#111;--m:#666;--b:#e2e2e5;--ok:#15803d;--wr:#b45309;--er:#b91c1c;--ac:#111;--ac2:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121214;--s:#1d1d21;--t:#f2f2f2;--m:#9a9aa2;--b:#33333a;--ok:#4ade80;--wr:#fbbf24;--er:#f87171;--ac:#f2f2f2;--ac2:#111}}
+:root[data-theme=dark]{--bg:#121214;--s:#1d1d21;--t:#f2f2f2;--m:#9a9aa2;--b:#33333a;--ok:#4ade80;--wr:#fbbf24;--er:#f87171;--ac:#f2f2f2;--ac2:#111}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--t);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1240px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:22px;margin:0}header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.card{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px #0001}
+button,.btn{font:inherit;border:1px solid var(--b);background:var(--bg);color:var(--t);border-radius:9px;padding:7px 12px;cursor:pointer}
+button.p{background:var(--ac);color:var(--ac2);border-color:var(--ac)}button.big{font-size:16px;padding:14px 22px;font-weight:600}
+button:disabled{opacity:.4;cursor:not-allowed}
+#drop{border:2px dashed var(--b);border-radius:14px;padding:28px;text-align:center;background:var(--bg);transition:border-color .2s}
+#drop.on{border-color:var(--ac);background:var(--s)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.opt-bar{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:var(--bg);border:1px solid var(--b);border-radius:10px;margin-top:10px}
+.opt-bar label{display:flex;gap:6px;align-items:center;cursor:pointer;font-weight:500}
+.opt-highlight{border-color:var(--ac);background:var(--s);padding:6px 10px;border-radius:8px}
+.wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--b);vertical-align:middle}th{color:var(--m);font-weight:500}
+.st{font-weight:600}.done{color:var(--ok)}.review{color:var(--wr)}.fail{color:var(--er)}.proc{color:var(--m)}
+progress{width:100%;height:10px}
+#set{display:none;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}#set label{display:flex;gap:6px;align-items:center}
+
+/* Large Visual Gallery Grids */
+.gal-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin:20px 0 8px}
+.gal-head h3{margin:0;font-size:17px}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:18px}
+.gcard{background:var(--bg);border:1px solid var(--b);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px #0001}
+.gcard.done-card{border-color:var(--ok)}
+.gcard.rev-card{border-color:var(--wr)}
+.gthumb{height:220px;display:flex;align-items:center;justify-content:center;padding:12px;position:relative;cursor:zoom-in;
+background-color:#fff;
+background-image:linear-gradient(45deg,#e2e2e5 25%,transparent 25%,transparent 75%,#e2e2e5 75%),linear-gradient(45deg,#e2e2e5 25%,transparent 25%,transparent 75%,#e2e2e5 75%);
+background-size:18px 18px;background-position:0 0,9px 9px}
+.gthumb img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
+.gbadge{position:absolute;top:8px;right:8px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--b);box-shadow:0 1px 3px #0002}
+.gmeta{padding:10px;display:flex;flex-direction:column;gap:6px;font-size:12px;border-top:1px solid var(--b);flex:1;justify-content:space-between}
+.gname{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gacts{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.gacts button{padding:4px 8px;font-size:12px}
+
+/* Modal */
+#mod{position:fixed;inset:0;background:#000a;display:none;z-index:9;padding:16px}
+#mod>div{background:var(--bg);border-radius:14px;height:100%;padding:14px;display:flex;flex-direction:column;gap:8px}
+.pv{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:8px;min-height:0}
+.pane{overflow:auto;border:1px solid var(--b);border-radius:10px;background:#fff;
+background-image:linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%),linear-gradient(45deg,#ccc 25%,transparent 25%,transparent 75%,#ccc 75%);background-size:16px 16px;background-position:0 0,8px 8px;display:flex;align-items:center;justify-content:center;padding:12px}
+.pane img{display:block;max-width:none}.m{color:var(--m)}
+#zlink a{display:inline-block;margin-top:8px;padding:8px 14px;background:var(--ok);color:#fff;text-decoration:none;border-radius:8px;font-weight:600}
+@media(max-width:640px){.pv{grid-template-columns:1fr}.gal{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}.gthumb{height:170px}}
+</style>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#111111">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+<main>
+<header><div style="display:flex;align-items:center;gap:10px"><img src="logo.png" alt="Robi Graphics" style="height:56px;background:#fff;border-radius:10px;padding:3px"><h1>Bulk SVG Background Remover</h1></div><div><button id="bset">More Settings</button> <button id="bhelp">Help</button></div></header>
+
+<div id="set" class="card">
+<label>Sensitivity (coverage %) <input type="range" id="sens" min="85" max="99" value="97"><b id="sv">97</b></label>
+<label><input type="checkbox" id="cons" checked> Conservative mode (uncertain → review)</label>
+<label>Concurrency <input type="number" id="conc" min="1" max="8" value="4" style="width:56px"></label>
+</div>
+
+<div id="drop" class="card"><b>Drag and drop SVG files here</b><div class="m">Hundreds at once. Processing is local; nothing leaves your browser.</div>
+<div class="row" style="justify-content:center"><button class="p" id="bf1">Browse SVG Files</button><button id="bf2">Add Folder</button></div>
+<input id="f1" type="file" accept=".svg,image/svg+xml" multiple hidden><input id="f2" type="file" webkitdirectory multiple hidden>
+<div id="info" class="m" style="margin-top:8px"></div></div>
+
+<div class="card">
+<div class="opt-bar" style="margin-top:0;margin-bottom:10px">
+  <label class="opt-highlight" title="Remove inner white cutouts/shapes inside the artwork as well as the outer background">
+    <input type="checkbox" id="inner"> <b>Remove inner white parts too</b> <span class="m">(ডিজাইনের ভিতরের সাদা অংশও রিমুভ হবে)</span>
+  </label>
+  <label class="opt-highlight" title="Ungroup color-based or unnecessary wrapper groups so elements stay independent">
+    <input type="checkbox" id="ungroup" checked> <b>Ungroup color/wrapper groups</b> <span class="m">(কালার বা অপ্রয়োজনীয় গ্রুপ ভেঙে আলাদা রাখবে)</span>
+  </label>
+  <label><input type="checkbox" id="near"> Also near-white (≥245)</label>
+  <label><input type="checkbox" id="cust"> Custom color <input type="color" id="cc" value="#ffffff"></label>
+</div>
+<div class="row" style="margin:0"><button class="p" id="go">Start Processing</button><button id="cancel">Stop (Pause)</button><button id="retry">Retry Failed</button><button id="rmsel">Remove Selected</button><button id="clr">Clear All</button></div>
+<progress id="pg" value="0" max="1" style="margin-top:10px"></progress><div id="stats" class="m"></div><div id="msgs" class="m"></div>
+</div>
+
+<!-- SECTION 1: LARGE UPLOADED PREVIEW -->
+<div class="gal-head">
+  <h3>1. Uploaded SVG Files — Large Preview (আপলোড করা ফাইলসমূহ)</h3>
+  <div class="row" style="margin:0"><label style="cursor:pointer"><input type="checkbox" id="all"> Select All</label> <button id="tog1">Hide/Show Table</button></div>
+</div>
+<div id="gal1" class="gal"></div>
+<div id="tbl1wrap" class="card wrap" style="display:none"><table><thead><tr><th>Sel</th><th>Filename</th><th>Size</th><th>Status</th><th>Background</th><th>Result</th><th>Action</th></tr></thead><tbody id="tb"></tbody></table></div>
+
+<!-- SECTION 2: LARGE PROCESSED / ZIP-READY PREVIEW -->
+<div class="gal-head">
+  <h3>2. Processed Transparent SVGs — Ready for ZIP Download (ব্যাকগ্রাউন্ড রিমুভ হওয়া ফাইলসমূহ)</h3>
+  <div class="row" style="margin:0"><button id="tog2">Hide/Show Table</button></div>
+</div>
+<div id="gal2" class="gal"></div>
+<div id="tbl2wrap" class="card wrap" style="display:none"><table><thead><tr><th>Filename</th><th>Before</th><th>After</th><th>What was removed</th><th>Status</th><th>Action</th></tr></thead><tbody id="tb2"></tbody></table></div>
+
+<div class="card"><div class="row" style="margin:0"><button class="p big" id="zip">DOWNLOAD ALL SVG FILES (ZIP)</button><button id="rep">Download failed report</button><button id="rep2">Download full report (all files)</button></div>
+<div id="zinfo" class="m" style="margin-top:8px"></div><div id="zmsg" style="margin-top:6px;font-weight:500"></div><div id="zlink"></div>
+<button id="zsave" class="p big" style="display:none;margin-top:8px"></button></div>
+</main>
+
+<div id="mod"><div><div class="row" style="margin:0"><b id="mt"></b><span class="m">Zoom</span><input type="range" id="zm" min="20" max="400" value="100"><button id="zfit">Fit</button><button style="margin-left:auto" id="mclose">Close</button></div>
+<div class="m">Left: original. Right: processed on transparency checkerboard (checkerboard is preview only).</div>
+<pre id="rp" style="margin:0;max-height:22vh;overflow:auto;font-size:12px;background:var(--s);padding:8px;border-radius:8px;white-space:pre-wrap"></pre>
+<div class="pv"><div class="pane"><img id="i1" alt="original"></div><div class="pane"><img id="i2" alt="processed"></div></div></div></div>
+<div id="host" style="position:fixed;left:-99999px;top:0;width:1000px;height:1000px;visibility:hidden;pointer-events:none"></div>
+
+<script>
+const $=id=>document.getElementById(id),SH='path,rect,circle,ellipse,line,polyline,polygon,text,image,use',MAXB=20e6,ZIPNAME='SVG-Background-Removed.zip';
+let items=[],uid=0,running=false,cancel=false,notes=[],zblob=null,zbusy=false,lastUrl=null;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const byteLen=s=>new TextEncoder().encode(s).length;
+const kb=n=>n>1e6?(n/1e6).toFixed(2)+' MB':(n/1e3).toFixed(1)+' KB';
+const LBL={wait:'Waiting',proc:'Processing',done:'Completed',review:'Review Required',fail:'Failed'};
+let raf=0;function draw(){cancelAnimationFrame(raf);raf=requestAnimationFrame(render)}
+
+function getOrigUrl(it){
+ if(!it.origUrl)it.origUrl=URL.createObjectURL(it.file);
+ return it.origUrl;
+}
+function getOutUrl(it){
+ if(it.out && it.outUrlFor!==it.out){
+  if(it.outUrl)URL.revokeObjectURL(it.outUrl);
+  it.outUrl=URL.createObjectURL(new Blob([it.out],{type:'image/svg+xml'}));
+  it.outUrlFor=it.out;
+ }
+ return it.outUrl||'';
+}
+function revokeItemUrls(it){
+ if(it.origUrl){URL.revokeObjectURL(it.origUrl);it.origUrl=null;}
+ if(it.outUrl){URL.revokeObjectURL(it.outUrl);it.outUrl=null;it.outUrlFor=null;}
+}
+
+function render(){
+ const c=k=>items.filter(i=>i.st==k).length,n=items.length,fin=c('done')+c('review')+c('fail');
+ $('info').textContent=n+' files, '+kb(items.reduce((a,i)=>a+i.size,0));
+ $('pg').max=Math.max(n,1);$('pg').value=fin;
+ $('stats').textContent=`Total ${n} · Pending ${c('wait')} · Processing ${c('proc')} · Completed ${c('done')} · Review ${c('review')} · Failed ${c('fail')} · ${n?Math.round(fin/n*100):0}%`;
+ $('msgs').innerHTML=notes.map(esc).join('<br>');
+ $('all').checked=n>0&&items.every(i=>i.sel);
+
+ // Render Large Uploaded Gallery (Section 1)
+ $('gal1').innerHTML=items.length?items.map(i=>`
+  <div class="gcard">
+   <div class="gthumb" data-a="pv" data-i="${i.id}" title="Click to zoom / compare">
+    <span class="gbadge st ${i.st}">${LBL[i.st]}</span>
+    <img src="${getOrigUrl(i)}" alt="${esc(i.name)}" loading="lazy">
+   </div>
+   <div class="gmeta">
+    <div>
+     <div style="display:flex;align-items:center;gap:6px">
+      <input type="checkbox" data-s="${i.id}" ${i.sel?'checked':''}>
+      <span class="gname" title="${esc(i.name)}">${esc(i.name)}</span>
+     </div>
+     <div class="m" style="margin-top:3px">${kb(i.size)} ${i.bg?'· '+esc(i.bg):''}</div>
+     ${i.msg?`<div class="m" style="margin-top:2px">${esc(i.msg)}</div>`:''}
+    </div>
+    <div class="gacts">
+     <button data-a="pv" data-i="${i.id}">Large View</button>
+     ${i.st=='fail'?`<button data-a="rt" data-i="${i.id}">Retry</button>`:''}
+     ${i.out||i.st=='fail'?`<button data-a="rs" data-i="${i.id}">Reset</button>`:''}
+    </div>
+   </div>
+  </div>`).join(''):'<div class="m" style="grid-column:1/-1;padding:12px">No files uploaded yet. Drag & drop or browse SVG files above.</div>';
+
+ // Render Table 1 (optional detailed view)
+ $('tb').innerHTML=items.map(i=>`<tr><td><input type="checkbox" data-s="${i.id}" ${i.sel?'checked':''}></td><td>${esc(i.name)}</td><td>${kb(i.size)}</td><td class="st ${i.st}">${LBL[i.st]}</td><td>${esc(i.bg||'')}</td><td>${esc(i.msg||'')}</td><td>
+ ${i.out?`<button data-a="pv" data-i="${i.id}">Before/After</button> `:''}${i.st=='review'?`<button data-a="ok" data-i="${i.id}">Approve</button> <button data-a="no" data-i="${i.id}">Reject</button> `:''}${i.st=='done'?`<button data-a="dl" data-i="${i.id}">Download</button> `:''}${i.st=='fail'?`<button data-a="rt" data-i="${i.id}">Retry</button> `:''}${i.out||i.st=='fail'?`<button data-a="rs" data-i="${i.id}">Restore</button>`:''}</td></tr>`).join('');
+
+ renderAfter();
+ const ok=items.filter(i=>i.st=='done'&&i.out),rv=c('review');
+ $('zip').disabled=!ok.length||zbusy;
+ $('rep').disabled=!items.some(i=>i.st=='fail'||i.st=='review');
+ $('rep2').disabled=!items.length;
+ if(!zbusy)$('zinfo').textContent=(ok.length?ok.length+' processed SVG files shown in Section 2 will be included in the ZIP.':'No completed files yet.')+(rv?' '+rv+' file(s) need review and are NOT in the ZIP until approved.':'');
+ $('go').disabled=running||!items.some(i=>i.st=='wait');
+ $('go').textContent=items.some(i=>i.st=='done'||i.st=='review'||i.st=='fail')&&items.some(i=>i.st=='wait')?'Resume Processing':'Start Processing';
+ $('cancel').disabled=!running;
+}
+
+// ---- UI wiring
+$('bset').onclick=()=>{$('set').style.display=$('set').style.display=='grid'?'none':'grid'};
+$('tog1').onclick=()=>{$('tbl1wrap').style.display=$('tbl1wrap').style.display=='none'?'block':'none'};
+$('tog2').onclick=()=>{$('tbl2wrap').style.display=$('tbl2wrap').style.display=='none'?'block':'none'};
+$('bhelp').onclick=()=>alert('1) Upload SVG files (large previews appear automatically).\n2) Check "Remove inner white parts too" or "Ungroup color/wrapper groups" as needed.\n3) Click Start Processing.\n4) Check Section 2 for large previews of transparent files ready for ZIP download.');
+$('bf1').onclick=()=>$('f1').click();$('bf2').onclick=()=>$('f2').click();
+$('zfit').onclick=()=>{$('zm').value=100;zoom()};$('mclose').onclick=()=>closeMod();
+
+// ---- add files
+function add(list){
+ let rej=[],skipped=0;notes=[];
+ for(const f of list){
+  if(!/\.svg$/i.test(f.name)&&f.type!='image/svg+xml'){skipped++;continue}
+  if(f.size>MAXB){rej.push(f.name+': over 20 MB');continue}
+  if(!f.size){rej.push(f.name+': empty file');continue}
+  const key=f.webkitRelativePath||f.name;
+  if(items.some(i=>i.key==key&&i.size==f.size&&i.file.lastModified==f.lastModified)){rej.push(f.name+': duplicate, skipped');continue}
+  items.push({id:++uid,file:f,key,name:f.name,size:f.size,st:'wait',sel:false});
+ }
+ rej.slice(0,15).forEach(r=>notes.push(r));
+ if(rej.length>15)notes.push('…and '+(rej.length-15)+' more rejected');
+ if(skipped)notes.push(skipped+' non-SVG file(s) ignored');
+ draw();
+}
+$('f1').onchange=e=>{add([...e.target.files]);e.target.value=''};
+$('f2').onchange=e=>{add([...e.target.files]);e.target.value=''};
+const dz=$('drop');
+dz.ondragover=e=>{e.preventDefault();dz.classList.add('on')};
+dz.ondragleave=()=>dz.classList.remove('on');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('on');add([...e.dataTransfer.files])};
+$('sens').oninput=e=>$('sv').textContent=e.target.value;
+
+// ---- svg engine
+const parse=t=>{const d=new DOMParser().parseFromString(t,'image/svg+xml');return d.querySelector('parsererror')||d.documentElement.localName!='svg'?null:d};
+const EXT='url\\(\\s*[\'"]?\\s*(?![#\\s\'"]|data:)';
+const EXTRE=new RegExp(EXT,'i'),EXTIMP=new RegExp('@import|'+EXT,'i');
+
+function sanitize(svg){
+ let n=0;
+ svg.querySelectorAll('script,foreignObject,iframe,embed,object').forEach(e=>{e.remove();n++});
+ svg.querySelectorAll('style').forEach(e=>{if(EXTIMP.test(e.textContent)){e.remove();n++}});
+ svg.querySelectorAll('*').forEach(e=>{for(const a of [...e.attributes]){const k=a.name.toLowerCase(),v=a.value.trim();
+  if(k.startsWith('on')||((k=='href'||k.endsWith(':href'))&&!v.startsWith('#')&&!/^data:image\//i.test(v))||EXTRE.test(v)||/^\s*javascript:/i.test(v)){e.removeAttribute(a.name);n++}}});
+ return n;
+}
+
+function rgbOf(h){return[1,3,5].map(i=>parseInt(h.substr(i,2),16))}
+function isBg(fill,o){
+ if(!fill||fill=='none'||fill=='transparent'||fill.startsWith('url'))return false;
+ const m=fill.match(/[\d.]+/g);if(!m||m.length<3)return false;const c=m.slice(0,3).map(Number);
+ if(m.length>=4&&Number(m[3])===0)return false;
+ if(o.cust){const t=rgbOf(o.cc);return c.every((v,i)=>Math.abs(v-t[i])<=(o.near?6:0))}
+ const lim=o.near?245:255;return c.every(v=>v>=lim);
+}
+
+const getOpt=()=>({
+ sens:+$('sens').value/100,
+ cons:$('cons').checked,
+ near:$('near').checked,
+ cust:$('cust').checked,
+ cc:$('cc').value,
+ inner:$('inner').checked,
+ ungroup:$('ungroup').checked,
+ conc:Math.max(1,Math.min(8,+$('conc').value||4))
+});
+
+function refsOk(d){
+ const ids=new Set([...d.querySelectorAll('[id]')].map(e=>e.id)),miss=[];
+ d.querySelectorAll('*').forEach(e=>{for(const a of e.attributes){const v=a.value;
+  const m=[...v.matchAll(/url\(\s*['"]?\s*#([^)'"\s]+)/g)].map(x=>x[1]);
+  if((a.name=='href'||a.name.endsWith(':href'))&&v.startsWith('#'))m.push(v.slice(1));
+  m.forEach(r=>{if(!ids.has(r))miss.push(r)})}});
+ return miss;
+}
+
+// Function to ungroup color/wrapper groups while preserving essential structure
+function ungroupWrapperGroups(svg){
+ // Find all <g> elements that are not protected (e.g. inside defs, or having specific semantic attributes we might want to keep)
+ const groups = svg.querySelectorAll('g');
+ groups.forEach(g => {
+  if (g.closest('defs,symbol,marker,clipPath,mask')) return;
+  // If group has no meaningful structural attributes (like transform or clip-path), or if it's purely a color/wrapper group:
+  const hasTransform = g.hasAttribute('transform');
+  const hasClip = g.hasAttribute('clip-path') || g.hasAttribute('mask');
+  const hasId = g.hasAttribute('id');
+  
+  // If it's a generic wrapper group without vital transform/clip, unwrap it (move children out)
+  if (!hasTransform && !hasClip) {
+   const parent = g.parentNode;
+   while (g.firstChild) {
+    parent.insertBefore(g.firstChild, g);
+   }
+   g.remove();
+  }
+ });
+}
+
+function analyze(text,o){
+ const od=parse(text);if(!od)throw Error('Invalid or corrupted SVG/XML');
+ const svg=document.importNode(od.documentElement,true),san=sanitize(svg),host=$('host');
+ 
+ // If ungroup option is enabled, remove color/wrapper groups first
+ if(o.ungroup){
+  ungroupWrapperGroups(svg);
+ }
+
+ const origW=svg.getAttribute('width'),origH=svg.getAttribute('height');
+ if(!origW && !origH){
+  svg.setAttribute('width','1000');
+  svg.setAttribute('height','1000');
+ }
+ const sh=host.shadowRoot||host.attachShadow({mode:'open'});
+ sh.appendChild(svg);
+ try{
+  const root=svg.getBoundingClientRect();
+  if(!root.width||!root.height)throw Error('SVG has no measurable size');
+  const leaves=[...svg.querySelectorAll(SH)].filter(e=>!e.closest('defs,clipPath,mask,pattern,symbol,marker'));
+  const hi=[],lo=[],det=[];let before=0;
+  for(const e of leaves){
+   const cs=getComputedStyle(e);
+   if(!isBg(cs.fill,o)){before++;continue}
+   const r=e.getBoundingClientRect(),cw=r.width/root.width,ch=r.height/root.height;
+   const ox=Math.max(0,Math.min(r.right,root.right)-Math.max(r.left,root.left))/root.width,oy=Math.max(0,Math.min(r.bottom,root.bottom)-Math.max(r.top,root.top))/root.height;
+   const cov=Math.min(cw,ox),cov2=Math.min(ch,oy);
+   const full=cov>=o.sens&&cov2>=o.sens,part=cov>=.85&&cov2>=.85;
+
+   if(!part){
+    if(o.inner){
+     const d=`Inner ${e.localName} (${Math.round(Math.min(cov,1)*100)}% x ${Math.round(Math.min(cov2,1)*100)}%), fill ${cs.fill}`;
+     hi.push(e);
+     det.push(d+' [inner white removed]');
+    }
+    continue;
+   }
+
+   const simple=e.localName=='rect'||e.localName=='polygon'||(e.localName=='path'&&((e.getAttribute('d')||'').match(/[Mm]/g)||[]).length<=1);
+   const clipped=e.closest('[clip-path],[mask]');
+   const d=`${e.localName} covers ${Math.round(Math.min(cov,1)*100)}% x ${Math.round(Math.min(cov2,1)*100)}% of canvas, fill ${cs.fill}`;
+   if(full&&simple&&!before&&!clipped){hi.push(e);det.push(d+' [certain]')}
+   else if((!o.cons||o.inner)&&full&&!clipped){hi.push(e);det.push(d+' [removed]')}
+   else{lo.push(e);det.push(d+' [uncertain, needs approval]')}
+  }
+  const all=[...hi,...lo];all.forEach(e=>e.remove());
+  if(origW===null)svg.removeAttribute('width');else svg.setAttribute('width',origW);
+  if(origH===null)svg.removeAttribute('height');else svg.setAttribute('height',origH);
+
+  const out=new XMLSerializer().serializeToString(svg);
+  const nd=parse(out);if(!nd)throw Error('Output XML invalid');
+  const a=od.documentElement,b=nd.documentElement;
+  for(const k of['viewBox','width','height'])if(a.getAttribute(k)!==b.getAttribute(k))throw Error('Integrity: '+k+' changed');
+  if(od.querySelectorAll(SH).length-all.length!==nd.querySelectorAll(SH).length)throw Error('Integrity: artwork element count mismatch');
+  const miss=refsOk(nd),om=refsOk(od);if(miss.filter(x=>!om.includes(x)).length)throw Error('Integrity: broken reference #'+miss[0]);
+  return{out,hi:hi.length,lo:lo.length,san,det,nb:od.querySelectorAll(SH).length,na:nd.querySelectorAll(SH).length,vb:a.getAttribute('viewBox')||'none',w:a.getAttribute('width')||'none',h:a.getAttribute('height')||'none'};
+ }finally{if(svg.parentNode===sh)sh.removeChild(svg)}
+}
+
+async function proc(it,o){
+ it.text=it.text||await it.file.text();
+ const r=analyze(it.text,o);it.out=r.out;it.rem=r.hi+r.lo;it.rep=r;
+ it.bg=r.hi+r.lo?`${r.hi} removed, ${r.lo} uncertain`:'None found';
+ const extra=r.san?` (${r.san} unsafe item(s) stripped)`:'';
+ if(r.lo){it.st='review';it.msg='Uncertain background, needs approval'+extra}
+ else{it.st='done';it.msg=(r.hi?`${r.hi} white/bg shape(s) removed`:'No background found')+extra}
+}
+
+async function run(list){
+ if(running)return;running=true;cancel=false;notes=[];const o=getOpt();let k=0;draw();
+ const w=async()=>{while(!cancel&&k<list.length){const it=list[k++];it.st='proc';draw();
+  try{await new Promise(r=>setTimeout(r,0));await proc(it,o)}catch(e){it.st='fail';it.msg=e.message;it.out=null}draw()}};
+ await Promise.all(Array.from({length:o.conc},w));
+ list.forEach(i=>{if(i.st=='proc')i.st='wait'});running=false;draw();
+}
+
+$('go').onclick=()=>run(items.filter(i=>i.st=='wait'));
+$('cancel').onclick=()=>{cancel=true;notes=['Stopping. Files in progress finish, then it pauses.'];draw()};
+$('retry').onclick=()=>{if(running)return;const l=items.filter(i=>i.st=='fail');l.forEach(i=>{i.st='wait';i.msg=''});run(l)};
+$('clr').onclick=()=>{if(running)return;if(items.length&&!confirm('Remove all files?'))return;items.forEach(revokeItemUrls);items=[];notes=[];zblob=null;$('zsave').style.display='none';$('zlink').innerHTML='';$('zmsg').textContent='';draw()};
+$('rmsel').onclick=()=>{if(running)return;items.filter(i=>i.sel).forEach(revokeItemUrls);items=items.filter(i=>!i.sel);draw()};
+$('all').onchange=e=>{items.forEach(i=>i.sel=e.target.checked);draw()};
+
+document.addEventListener('change',e=>{
+ const id=e.target.dataset&&e.target.dataset.s;
+ if(id){const i=items.find(x=>x.id==id);if(i){i.sel=e.target.checked;draw()}}
+});
+
+document.addEventListener('click',e=>{
+ const b=e.target.closest('[data-a]');if(!b)return;
+ const it=items.find(x=>x.id==b.dataset.i);if(!it)return;
+ const a=b.dataset.a;
+ if(a=='pv')openMod(it);
+ else if(a=='ok'){it.st='done';it.msg='Approved by user (included in ZIP)';draw()}
+ else if(a=='no'){it.st='fail';it.msg='Rejected by user';it.out=null;draw()}
+ else if(a=='dl')save(outName(it,new Set()),it.out,'image/svg+xml');
+ else if(a=='rt'){if(running)return;it.st='wait';it.msg='';run([it])}
+ else if(a=='rs'){if(running&&it.st=='proc')return;it.st='wait';it.out=null;it.rep=null;it.msg='Original restored; process again if needed';it.bg='';draw()}
+});
+
+// ---- preview modal (works for both before-processing and after-processing)
+let urls=[];
+function repText(it){
+ const r=it.rep;
+ if(!r)return`FILE: ${it.name}\nSTATUS: ${LBL[it.st]} (Not processed yet — showing original preview)`;
+ return `FILE: ${it.name}\nSTATUS: ${LBL[it.st]}\nBEFORE: ${kb(byteLen(it.text))}, ${r.nb} vector elements, viewBox ${r.vb}, width ${r.w}, height ${r.h}\nAFTER: ${kb(byteLen(r.out))}, ${r.na} vector elements, viewBox/width/height unchanged\nREMOVED: ${r.det.length?r.det.length+' element(s)':'nothing (no background found)'}\n${r.det.map(d=>' - '+d).join('\n')}\nKEPT: ${r.na} artwork elements untouched.`;
+}
+
+async function openMod(it){
+ closeMod();$('mt').textContent=it.name;
+ if(!it.text)it.text=await it.file.text();
+ $('rp').textContent=repText(it);
+ const u1=URL.createObjectURL(new Blob([it.text],{type:'image/svg+xml'}));
+ const u2=it.out?URL.createObjectURL(new Blob([it.out],{type:'image/svg+xml'})):u1;
+ urls=it.out?[u1,u2]:[u1];
+ $('i1').src=u1;$('i2').src=u2;$('zm').value=100;zoom();$('mod').style.display='block';
+}
+function closeMod(){urls.forEach(u=>URL.revokeObjectURL(u));urls=[];$('i1').removeAttribute('src');$('i2').removeAttribute('src');$('mod').style.display='none'}
+function zoom(){$('i1').style.width=$('i2').style.width=$('zm').value+'%'}
+$('zm').oninput=zoom;
+document.addEventListener('keydown',e=>{if(e.key=='Escape')closeMod()});
+
+// ---- Fixed & 100% Compatible ZIP Writer
+const CRCT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRCT[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+
+async function buildZip(files,onp){
+ const enc=new TextEncoder(),parts=[],cen=[];let off=0;
+ const d=new Date();
+ const dt=(((Math.max(1980,d.getFullYear())-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate())&0xFFFF;
+ const tm=((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1))&0xFFFF;
+
+ for(let i=0;i<files.length;i++){
+  const nm=enc.encode(files[i].name);
+  const raw=enc.encode(files[i].data);
+  const crc=crc32(raw);
+
+  const lh=new DataView(new ArrayBuffer(30));
+  lh.setUint32(0,0x04034b50,true);
+  lh.setUint16(4,20,true);
+  lh.setUint16(6,0x0800,true);
+  lh.setUint16(8,0,true);
+  lh.setUint16(10,tm,true);
+  lh.setUint16(12,dt,true);
+  lh.setUint32(14,crc,true);
+  lh.setUint32(18,raw.length,true);
+  lh.setUint32(22,raw.length,true);
+  lh.setUint16(26,nm.length,true);
+  lh.setUint16(28,0,true);
+  parts.push(lh.buffer,nm,raw);
+
+  const ch=new DataView(new ArrayBuffer(46));
+  ch.setUint32(0,0x02014b50,true);
+  ch.setUint16(4,20,true);
+  ch.setUint16(6,20,true);
+  ch.setUint16(8,0x0800,true);
+  ch.setUint16(10,0,true);
+  ch.setUint16(12,tm,true);
+  ch.setUint16(14,dt,true);
+  ch.setUint32(16,crc,true);
+  ch.setUint32(20,raw.length,true);
+  ch.setUint32(24,raw.length,true);
+  ch.setUint16(28,nm.length,true);
+  ch.setUint16(30,0,true);
+  ch.setUint16(32,0,true);
+  ch.setUint16(34,0,true);
+  ch.setUint16(36,0,true);
+  ch.setUint32(38,0,true);
+  ch.setUint32(42,off,true);
+  cen.push(ch.buffer,nm);
+
+  off+=30+nm.length+raw.length;
+  if(onp)onp((i+1)/files.length);
+  if(i%20==19)await new Promise(r=>setTimeout(r,0));
+ }
+
+ let cs=0;for(let i=0;i<cen.length;i++)cs+=cen[i].byteLength;
+ const e=new DataView(new ArrayBuffer(22));
+ e.setUint32(0,0x06054b50,true);
+ e.setUint16(4,0,true);
+ e.setUint16(6,0,true);
+ e.setUint16(8,files.length,true);
+ e.setUint16(10,files.length,true);
+ e.setUint32(12,cs,true);
+ e.setUint32(16,off,true);
+ e.setUint16(20,0,true);
+
+ return new Blob([...parts,...cen,e.buffer],{type:'application/zip'});
+}
+
+// ---- Reliable Cross-Browser Export
+const outName=(it,used)=>{
+ const clean=it.name.replace(/\.svg$/i,'')+'-transparent';
+ let n=clean,k=2;
+ while(used.has(n.toLowerCase()))n=clean+'-'+k++;
+ used.add(n.toLowerCase());
+ return n+'.svg';
+};
+
+function setMsg(t){$('zmsg').textContent=t;$('zlink').innerHTML=''}
+
+async function save(name,data,type){
+ const blob=data instanceof Blob?data:new Blob([data],{type});
+ if(lastUrl)URL.revokeObjectURL(lastUrl);
+ const u=lastUrl=URL.createObjectURL(blob);
+
+ const a=document.createElement('a');
+ a.href=u;
+ a.download=name;
+ a.rel='noopener';
+ a.style.display='none';
+ document.body.appendChild(a);
+ a.click();
+ setTimeout(()=>a.remove(),2000);
+
+ setMsg('Download triggered: '+name);
+ const l=document.createElement('a');
+ l.href=u;
+ l.download=name;
+ l.textContent='⬇ Click here to manually download '+name;
+ $('zlink').innerHTML='';
+ $('zlink').appendChild(l);
+ return true;
+}
+
+$('zip').onclick=async()=>{
+ const ok=items.filter(i=>i.st=='done'&&i.out);
+ if(!ok.length||zbusy)return;
+ const used=new Set(),files=ok.map(i=>({name:outName(i,used),data:i.out}));
+ zbusy=true;zblob=null;$('zip').disabled=true;$('zsave').style.display='none';
+ try{
+  zblob=await buildZip(files,p=>{$('zinfo').textContent='Building ZIP… '+Math.round(p*100)+'%'});
+  $('zinfo').textContent='ZIP ready: '+files.length+' SVG files ('+kb(zblob.size)+')';
+  $('zsave').textContent='DOWNLOAD ZIP AGAIN ('+files.length+' files, '+kb(zblob.size)+')';
+  $('zsave').style.display='inline-block';
+  await save(ZIPNAME,zblob,'application/zip');
+ }catch(e){
+  setMsg('ZIP Error: '+(e&&e.message||e));
+ }
+ zbusy=false;draw();
+};
+
+$('zsave').onclick=()=>{if(zblob)save(ZIPNAME,zblob,'application/zip')};
+
+function renderAfter(){
+ const doneList=items.filter(i=>i.out||i.st=='fail');
+ $('gal2').innerHTML=doneList.length?doneList.map(i=>{
+  const r=i.rep;
+  const isReady=i.st=='done'&&i.out;
+  const cls=isReady?'done-card':(i.st=='review'?'rev-card':'');
+  return `
+  <div class="gcard ${cls}">
+   <div class="gthumb" data-a="pv" data-i="${i.id}" title="Click for Before/After comparison">
+    <span class="gbadge st ${i.st}">${isReady?'✓ IN ZIP':LBL[i.st]}</span>
+    ${i.out?`<img src="${getOutUrl(i)}" alt="${esc(i.name)}" loading="lazy">`:`<span class="er">${esc(i.msg||'Failed')}</span>`}
+   </div>
+   <div class="gmeta">
+    <div>
+     <div class="gname" title="${esc(i.name)}">${esc(i.name)}</div>
+     <div class="m" style="margin-top:3px">${r?`${r.hi} removed · ${r.na} elements kept`:esc(i.msg||'')}</div>
+    </div>
+    <div class="gacts">
+     ${i.out?`<button data-a="pv" data-i="${i.id}">Compare</button>`:''}
+     ${i.st=='review'?`<button class="p" data-a="ok" data-i="${i.id}">Approve</button> <button data-a="no" data-i="${i.id}">Reject</button>`:''}
+     ${isReady?`<button data-a="dl" data-i="${i.id}">Download SVG</button>`:''}
+    </div>
+   </div>
+  </div>`;
+ }).join(''):'<div class="m" style="grid-column:1/-1;padding:12px">Processed transparent files ready for ZIP download will appear here in large preview.</div>';
+
+ $('tbl2wrap').innerHTML=`<table><thead><tr><th>Filename</th><th>Before</th><th>After</th><th>What was removed</th><th>Status</th><th>Action</th></tr></thead><tbody id="tb2"></tbody></table>`;
+ $('tb2').innerHTML=doneList.map(i=>{const r=i.rep;
+  return `<tr><td>${esc(i.name)}</td><td>${r?kb(byteLen(i.text))+', '+r.nb+' elements':'-'}</td><td>${r&&i.out?kb(byteLen(r.out))+', '+r.na+' elements':'-'}</td><td>${r?(r.det.length?r.det.map(d=>'<div>'+esc(d)+'</div>').join(''):'Nothing removed (no background found)'):esc(i.msg||'')}</td><td class="st ${i.st}">${LBL[i.st]}</td><td>${i.out?`<button data-a="pv" data-i="${i.id}">Before/After</button> `:''}${i.st=='review'?`<button data-a="ok" data-i="${i.id}">Approve</button> <button data-a="no" data-i="${i.id}">Reject</button> `:''}${i.st=='done'?`<button data-a="dl" data-i="${i.id}">Download</button>`:''}</td></tr>`}).join('');
+}
+
+$('rep2').onclick=()=>{
+ const t=items.map(i=>i.rep&&i.out?repText(i):`FILE: ${i.name}\nSTATUS: ${LBL[i.st]}\n${i.msg||''}`).join('\n\n----------------\n\n');
+ if(t)save('full-report.txt',t,'text/plain');
+};
+
+$('rep').onclick=()=>{
+ const t=items.filter(i=>i.st=='fail'||i.st=='review').map(i=>`${i.name}\t${LBL[i.st]}\t${i.msg||''}`).join('\n');
+ save('failed-report.txt','Filename\tStatus\tReason\n'+t,'text/plain');
+};
+
+render();
+</script>
+<script>if("serviceWorker"in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))</script>
+</body>
+</html>
