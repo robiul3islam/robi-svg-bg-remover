@@ -23,6 +23,7 @@ jobs:
           npm i @capacitor/core @capacitor/cli @capacitor/android
           npx cap init "SVG BG Remover" com.robigraphics.svgbgremover --web-dir www
           npx cap add android
+          printf '\nconfigurations.all {\n  exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib-jdk7"\n  exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib-jdk8"\n}\n' >> android/app/build.gradle
           npx cap sync android
       - name: Build APK
         run: cd build/android && chmod +x gradlew && ./gradlew assembleDebug
